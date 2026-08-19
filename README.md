@@ -29,54 +29,61 @@ Gemini does the reading server-side.
 
 ## Install
 
-```bash
-uv tool install "nblm-mcp[auth]"
-# or: pip install "nblm-mcp[auth]"
-```
-
-The `auth` extra pulls in Playwright, which is only needed for the one-time
-browser login:
+Not on PyPI yet — install straight from this repository. `uvx` builds and runs
+it on demand, so there is nothing to keep updated by hand:
 
 ```bash
-playwright install chromium
+uvx --from git+https://github.com/Diego-Dev-Moros/nblm-mcp nblm-mcp
 ```
 
 ## Log in once
 
+Login needs the `auth` extra (Playwright) and a human at the keyboard:
+
 ```bash
-nblm-mcp-login
+uvx --from "nblm-mcp[auth] @ git+https://github.com/Diego-Dev-Moros/nblm-mcp" nblm-mcp-login
 ```
 
 A browser window opens; sign in to NotebookLM as you normally would. The
 session cookies are stored under `~/.notebooklm/` (the same profile layout
 `notebooklm-py` uses, so an existing `notebooklm login` also works). The MCP
-server never logs in on its own — it needs a human at the keyboard, which an
+server never logs in on its own — it needs an interactive browser, which an
 MCP host cannot provide.
 
-Cookies expire. When they do, tools start returning an auth error; run
-`nblm-mcp-login` again.
+If Playwright has no browser yet, run `playwright install chromium` first.
+
+Cookies expire. When they do, tools start returning an auth error; run the
+login command again.
 
 ## Connect it to a client
 
-Claude Code:
+**Claude Code** — `-s user` makes it available in every project:
 
 ```bash
-claude mcp add notebooklm -- nblm-mcp
+claude mcp add notebooklm -s user -- \
+  uvx --from git+https://github.com/Diego-Dev-Moros/nblm-mcp nblm-mcp
 ```
 
-Or, in any MCP client's config file:
+**Claude Desktop** — add this to `claude_desktop_config.json` and restart the
+app (macOS: `~/Library/Application Support/Claude/`, Windows:
+`%APPDATA%\Claude\`, Linux: `~/.config/Claude/`):
 
 ```json
 {
   "mcpServers": {
     "notebooklm": {
-      "command": "nblm-mcp"
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/Diego-Dev-Moros/nblm-mcp", "nblm-mcp"]
     }
   }
 }
 ```
 
-Then ask the agent to call `auth_status` to confirm the session works.
+Claude Desktop launches from the GUI, which does not inherit your shell's
+`PATH`. If the server fails to start there, replace `"uvx"` with its absolute
+path (`which uvx`, typically `~/.local/bin/uvx`).
+
+Either way, confirm it works by asking the agent to call `auth_status`.
 
 ## Tools
 
